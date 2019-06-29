@@ -1,8 +1,8 @@
 # services/users/project/tests/base.py
-
+import time
 from flask_testing import TestCase
-
 from project import create_app, db
+from sqlalchemy import exc
 
 app = create_app()
 
@@ -15,8 +15,16 @@ class BaseTestCase(TestCase):
         return app
 
     def setUp(self):
-        db.create_all()
-        db.session.commit()
+        retries = 5
+        while retries > 0:
+            try:
+                db.create_all()
+                db.session.commit()
+                break
+            except exc.OperationalError:
+                retries = retries - 1
+                time.sleep(1)
+
 
     def tearDown(self):
         db.session.remove()
