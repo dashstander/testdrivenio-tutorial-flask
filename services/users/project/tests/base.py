@@ -25,7 +25,6 @@ class BaseTestCase(TestCase):
                 retries = retries - 1
                 time.sleep(1)
 
-
     def tearDown(self):
         db.session.remove()
         db.drop_all()
