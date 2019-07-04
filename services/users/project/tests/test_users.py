@@ -25,7 +25,8 @@ class TestUserService(BaseTestCase):
                 '/users',
                 data=json.dumps({
                     'username': 'michael',
-                    'email': 'michael@mherman.org'
+                    'email': 'michael@mherman.org',
+                    'password': 'pass'
                 }),
                 content_type='application/json'
             )
@@ -33,6 +34,7 @@ class TestUserService(BaseTestCase):
             self.assertEqual(response.status_code, 201)
             self.assertIn('michael@mherman.org was added!', data['message'])
             self.assertIn('success', data['status'])
+
 
     def test_add_user_invalid_json(self):
         """Ensure error is thrown if payload json is incorrect."""
@@ -52,7 +54,8 @@ class TestUserService(BaseTestCase):
         with self.client:
             response = self.client.post(
                 '/users',
-                data=json.dumps({'email': 'michael@mherman.org'}),
+                data=json.dumps({'email': 'michael@mherman.org',
+                                 'password': 'pass'}),
                 content_type='application/json'
             )
             data = json.loads(response.data.decode())
@@ -62,7 +65,9 @@ class TestUserService(BaseTestCase):
 
     def test_add_user_duplicate_email(self):
 
-        dupe_json = {'username': 'michael', 'email': 'michael@mherman.org'}
+        dupe_json = {'username': 'michael', 
+                     'email': 'michael@mherman.org',
+                     'password': 'pass'}
 
         with self.client:
             self.client.post(
@@ -84,7 +89,9 @@ class TestUserService(BaseTestCase):
 
     def test_single_user(self):
         """Ensure a single user can be queried correctly."""
-        user = add_user(username='dash', email='dstander@gmail.com')
+        user = add_user(username='dash',
+                        email='dstander@gmail.com',
+                        password='pass')
         with self.client:
             response = self.client.get(f'/users/{user.id}')
             data = json.loads(response.data.decode())
@@ -117,8 +124,8 @@ class TestUserService(BaseTestCase):
 
     def test_all_users(self):
         """Ensure get all users behaves correctly"""
-        add_user('dash', 'dstander@gmail.com')
-        add_user('lily', 'lily@gmail.com')
+        add_user('dash', 'dstander@gmail.com', 'pass')
+        add_user('lily', 'lily@gmail.com', 'pass')
 
         with self.client:
             response = self.client.get("/users")
@@ -147,8 +154,8 @@ class TestUserService(BaseTestCase):
 
     def test_main_with_users(self):
         """Ensure the main route behaves correctly when there are users"""
-        add_user('dash', 'dstander@zuora.com')
-        add_user('lily', 'lily@gmail.com')
+        add_user('dash', 'dstander@zuora.com', 'pass')
+        add_user('lily', 'lily@gmail.com', 'pass')
 
         with self.client:
             response = self.client.get('/')
@@ -166,13 +173,32 @@ class TestUserService(BaseTestCase):
         with self.client:
             response = self.client.post(
                 '/',
-                data={'username': 'dash', 'email': 'dstander@gmail.com'},
+                data={'username': 'dash', 'email': 'dstander@gmail.com', 'password': 'pass'},
                 follow_redirects=True
             )
             self.assertEqual(response.status_code, 200)
             self.assertIn(b'All Users', response.data)
             self.assertNotIn(b'<p>No users!</p>', response.data)
             self.assertIn(b'dash', response.data)
+
+    def test_add_user_invalid_json_key_no_password(self):
+        """Ensure error is thrown if user doesn't have password."""
+
+        with self.client:
+            response = self.client.post(
+                '/users',
+                data=json.dumps({
+                    'username': 'dash',
+                    'email': 'dstander@gmail.com'
+                }),
+                content_type='application/json'
+            )
+
+            data = json.loads(response.data.decode())
+            self.assertEqual(response.status_code, 400)
+            self.assertIn('Invalid payload.', data['message'])
+            self.assertIn('fail', data['status'])
+
 
 
 if __name__ == '__main__':
