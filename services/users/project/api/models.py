@@ -1,4 +1,8 @@
 # services/users/project/api/models.py
+import datetime as dt
+import jwt
+
+from flask import current_app
 from sqlalchemy.sql import func
 from project import db, bcrypt
 
@@ -21,7 +25,6 @@ class User(db.Model):
             password,
             current_app.config.get('BCRYPT_LOG_ROUNDS')).decode()
 
-
     def to_json(self):
         return {
             'id': self.id,
@@ -29,3 +32,38 @@ class User(db.Model):
             'email': self.email,
             'active': self.active
         }
+
+    def encode_auth_token(self, user_id):
+        """Generates auth token"""
+
+        config_days = current_app.config.get('TOKEN_EXPIRATION_DAYS')
+        config_seconds = current_app.config.get('TOKEN_EXPIRATION_SECONDS')
+
+        try:
+            payload = {
+                'exp': dt.datetime.utcnow() + dt.timedelta(
+                    days=config_days,
+                    seconds=config_seconds),
+                'iat': dt.datetime.utcnow(),
+                'sub': user_id
+            }
+
+            return jwt.encode(
+                payload,
+                current_app.config.get('SECRET_KEY'),
+                algorithm='HS256')
+        except Exception as e:
+            return e
+
+    @staticmethod
+    def decode_auth_token(token):
+        try:
+            payload = jwt.decode(
+                token,
+                current_app.config.get('SECRET_KEY'),
+                algorithms=['HS256'])
+            return payload['sub']
+        except jwt.ExpiredSignatureError:
+            return 'Signature expired. Please log in again.'
+        except jwt.InvalidTokenError:
+            return 'Invalid token. Please log in again.'

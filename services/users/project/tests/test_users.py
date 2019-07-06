@@ -35,7 +35,6 @@ class TestUserService(BaseTestCase):
             self.assertIn('michael@mherman.org was added!', data['message'])
             self.assertIn('success', data['status'])
 
-
     def test_add_user_invalid_json(self):
         """Ensure error is thrown if payload json is incorrect."""
         with self.client:
@@ -65,7 +64,7 @@ class TestUserService(BaseTestCase):
 
     def test_add_user_duplicate_email(self):
 
-        dupe_json = {'username': 'michael', 
+        dupe_json = {'username': 'michael',
                      'email': 'michael@mherman.org',
                      'password': 'pass'}
 
@@ -173,7 +172,10 @@ class TestUserService(BaseTestCase):
         with self.client:
             response = self.client.post(
                 '/',
-                data={'username': 'dash', 'email': 'dstander@gmail.com', 'password': 'pass'},
+                data={
+                    'username': 'dash',
+                    'email': 'dstander@gmail.com',
+                    'password': 'pass'},
                 follow_redirects=True
             )
             self.assertEqual(response.status_code, 200)
@@ -198,7 +200,6 @@ class TestUserService(BaseTestCase):
             self.assertEqual(response.status_code, 400)
             self.assertIn('Invalid payload.', data['message'])
             self.assertIn('fail', data['status'])
-
 
 
 if __name__ == '__main__':
